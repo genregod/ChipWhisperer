@@ -38,6 +38,11 @@ export function useWebSocket() {
 
       ws.onmessage = (event) => {
         try {
+          // Skip empty or whitespace-only messages
+          if (!event.data || event.data.trim() === '') {
+            return;
+          }
+          
           const message: WebSocketMessage = JSON.parse(event.data);
           setLastMessage(message);
 
@@ -47,7 +52,7 @@ export function useWebSocket() {
             listeners.forEach(listener => listener(message));
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          console.error('Error parsing WebSocket message:', event.data, error);
         }
       };
 

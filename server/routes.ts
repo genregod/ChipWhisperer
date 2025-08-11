@@ -176,9 +176,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket client connected');
 
-    ws.on('message', (message: string) => {
+    ws.on('message', (message: Buffer | string) => {
       try {
-        const data = JSON.parse(message);
+        const messageStr = message.toString();
+        
+        // Skip empty or whitespace-only messages
+        if (!messageStr || messageStr.trim() === '') {
+          return;
+        }
+        
+        const data = JSON.parse(messageStr);
         
         switch (data.type) {
           case 'serial_data':
@@ -206,6 +213,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }));
               }
             });
+            break;
+            
+          default:
+            // Handle unknown message types gracefully
+            console.log('Unknown WebSocket message type:', data.type);
             break;
         }
       } catch (error) {
