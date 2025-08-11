@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(210 25% 7.8431%);
+  --card: hsl(180 6.6667% 97.0588%);
+  --card-foreground: hsl(210 25% 7.8431%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(210 25% 7.8431%);
+  --primary: hsl(183.7931 100% 29.8039%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(18.9474 100% 60.3922%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(240 1.9608% 90%);
+  --muted-foreground: hsl(210 25% 7.8431%);
+  --accent: hsl(211.5789 51.3514% 92.7451%);
+  --accent-foreground: hsl(203.8863 88.2845% 53.1373%);
+  --destructive: hsl(356.3033 90.5579% 54.3137%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(201.4286 30.4348% 90.9804%);
+  --input: hsl(200 23.0769% 97.4510%);
+  --ring: hsl(202.8169 89.1213% 53.1373%);
+  --chart-1: hsl(203.8863 88.2845% 53.1373%);
+  --chart-2: hsl(159.7826 100% 36.0784%);
+  --chart-3: hsl(42.0290 92.8251% 56.2745%);
+  --chart-4: hsl(147.1429 78.5047% 41.9608%);
+  --chart-5: hsl(341.4894 75.2000% 50.9804%);
+  --sidebar: hsl(180 6.6667% 97.0588%);
+  --sidebar-foreground: hsl(210 25% 7.8431%);
+  --sidebar-primary: hsl(203.8863 88.2845% 53.1373%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(211.5789 51.3514% 92.7451%);
+  --sidebar-accent-foreground: hsl(203.8863 88.2845% 53.1373%);
+  --sidebar-border: hsl(205.0000 25.0000% 90.5882%);
+  --sidebar-ring: hsl(202.8169 89.1213% 53.1373%);
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 0.5rem;
+
+  /* Hardware debugger custom colors */
+  --hw-primary: hsl(183.7931 100% 29.8039%); /* #00979D */
+  --hw-secondary: hsl(18.9474 100% 60.3922%); /* #FF6B35 */
+  --hw-dark: hsl(0 0% 11.7647%); /* #1E1E1E */
+  --hw-darker: hsl(0 0% 7.0588%); /* #121212 */
+  --hw-code: hsl(219.5652 28.5714% 18.0392%); /* #282C34 */
+  --hw-success: hsl(122.4 39.3939% 49.0196%); /* #4CAF50 */
+  --hw-warning: hsl(45.4545 100% 51.1765%); /* #FFC107 */
+}
+
+.dark {
+  --background: hsl(0 0% 11.7647%);
+  --foreground: hsl(0 0% 100%);
+  --card: hsl(0 0% 7.0588%);
+  --card-foreground: hsl(0 0% 85.0980%);
+  --popover: hsl(0 0% 11.7647%);
+  --popover-foreground: hsl(0 0% 100%);
+  --primary: hsl(183.7931 100% 29.8039%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(18.9474 100% 60.3922%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(0 0% 9.4118%);
+  --muted-foreground: hsl(210 3.3898% 46.2745%);
+  --accent: hsl(219.5652 28.5714% 18.0392%);
+  --accent-foreground: hsl(0 0% 100%);
+  --destructive: hsl(356.3033 90.5579% 54.3137%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(210 5.2632% 14.9020%);
+  --input: hsl(219.5652 28.5714% 18.0392%);
+  --ring: hsl(183.7931 100% 29.8039%);
+  --sidebar: hsl(0 0% 7.0588%);
+  --sidebar-foreground: hsl(0 0% 85.0980%);
+  --sidebar-primary: hsl(183.7931 100% 29.8039%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(219.5652 28.5714% 18.0392%);
+  --sidebar-accent-foreground: hsl(0 0% 100%);
+  --sidebar-border: hsl(210 5.2632% 14.9020%);
+  --sidebar-ring: hsl(183.7931 100% 29.8039%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-hw-dark text-white;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--hw-dark));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--hw-code));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--hw-primary));
+}
+
+/* Console output styling */
+.console-output {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: hsl(var(--hw-code));
+  color: hsl(var(--foreground));
+}
+
+.console-line {
+  padding: 2px 0;
+}
+
+.console-line.error {
+  color: hsl(var(--destructive));
+}
+
+.console-line.warning {
+  color: hsl(var(--hw-warning));
+}
+
+.console-line.success {
+  color: hsl(var(--hw-success));
+}
+
+.console-line.info {
+  color: hsl(var(--primary));
+}
+
+/* Hex viewer styling */
+.hex-viewer {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  background: hsl(var(--hw-code));
+}
+
+.hex-address {
+  color: hsl(0 0% 50%);
+  margin-right: 1rem;
+}
+
+.hex-data {
+  color: hsl(var(--foreground));
+  margin-right: 1rem;
+}
+
+.hex-ascii {
+  color: hsl(0 0% 70%);
+}
+
+/* Tab content animation */
+.tab-content {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom form styles for dark theme */
+.form-control {
+  background: hsl(var(--hw-code));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.form-control:focus {
+  border-color: hsl(var(--hw-primary));
+  box-shadow: 0 0 0 2px hsla(var(--hw-primary) / 0.2);
+}
+
+/* Status indicators */
+.status-connected {
+  color: hsl(var(--hw-success));
+}
+
+.status-disconnected {
+  color: hsl(0 0% 50%);
+}
+
+.status-error {
+  color: hsl(var(--destructive));
+}
+
+/* Progress bar styling */
+.progress-bar {
+  background: hsl(var(--hw-primary));
+  transition: width 0.3s ease;
+}
+
+/* Button variants for hardware theme */
+.btn-primary {
+  background: hsl(var(--hw-primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+}
+
+.btn-primary:hover {
+  background: hsl(var(--hw-primary) / 0.8);
+}
+
+.btn-secondary {
+  background: hsl(var(--hw-secondary));
+  color: hsl(var(--secondary-foreground));
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: hsl(var(--hw-secondary) / 0.8);
+}
+
+.btn-success {
+  background: hsl(var(--hw-success));
+  color: hsl(var(--primary-foreground));
+  border: none;
+}
+
+.btn-success:hover {
+  background: hsl(var(--hw-success) / 0.8);
+}
+
+.btn-warning {
+  background: hsl(var(--hw-warning));
+  color: hsl(0 0% 0%);
+  border: none;
+}
+
+.btn-warning:hover {
+  background: hsl(var(--hw-warning) / 0.8);
+}
