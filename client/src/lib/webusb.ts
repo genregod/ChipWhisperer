@@ -27,12 +27,32 @@ export function useWebUSB() {
     }
 
     try {
+      // First, let's see what devices are available
+      console.log('Attempting to connect to CH341A...');
+      
+      // Check already authorized devices first
+      const authorizedDevices = await navigator.usb.getDevices();
+      console.log('Already authorized USB devices:', authorizedDevices.map(d => ({
+        vendorId: '0x' + d.vendorId.toString(16),
+        productId: '0x' + d.productId.toString(16),
+        productName: d.productName,
+        manufacturerName: d.manufacturerName
+      })));
+
       // Request CH341A device (vendor ID: 0x1a86, product ID: 0x5512)
       device = await navigator.usb.requestDevice({
         filters: [
           { vendorId: 0x1a86, productId: 0x5512 }, // CH341A
           { vendorId: 0x1a86, productId: 0x5523 }, // CH341A variant
+          { vendorId: 0x1a86 }, // Any QinHeng device (CH341A manufacturer)
         ]
+      });
+
+      console.log('Selected device:', {
+        vendorId: '0x' + device.vendorId.toString(16),
+        productId: '0x' + device.productId.toString(16),
+        productName: device.productName,
+        manufacturerName: device.manufacturerName
       });
 
       await device.open();
@@ -46,8 +66,20 @@ export function useWebUSB() {
       isConnected = true;
 
     } catch (error) {
-      if (error instanceof Error && error.name === 'NotFoundError') {
-        throw new Error('No CH341A device selected');
+      console.error('USB connection error:', error);
+      if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        
+        if (error.name === 'NotFoundError') {
+          throw new Error('No CH341A device selected. Make sure it\'s connected and try clicking "Connect" again to select your device from the browser popup.');
+        }
+        if (error.name === 'SecurityError') {
+          throw new Error('Permission denied. Make sure you\'re using HTTPS or localhost, and that the device isn\'t already in use by another application.');
+        }
+        if (error.name === 'NotSupportedError') {
+          throw new Error('Device not supported. Your CH341A variant may not be compatible with WebUSB.');
+        }
       }
       throw new Error(`Failed to connect to USB device: ${error instanceof Error ? error.message : String(error)}`);
     }

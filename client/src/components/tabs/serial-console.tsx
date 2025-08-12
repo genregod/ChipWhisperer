@@ -55,12 +55,27 @@ export default function SerialConsole() {
   useEffect(() => {
     const handleWebSocketMessage = (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data);
+        // Try to parse as JSON first
+        let data;
+        if (typeof event.data === 'string') {
+          try {
+            data = JSON.parse(event.data);
+          } catch {
+            // If JSON parsing fails, treat as plain text
+            data = { type: 'serial_data', data: event.data };
+          }
+        } else {
+          // Handle non-string data
+          data = { type: 'serial_data', data: String(event.data) };
+        }
+        
         if (data.type === 'serial_data') {
           addMessage("output", data.data);
         }
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+        console.error('Error handling WebSocket message:', error);
+        // Fallback: treat any message as serial data
+        addMessage("output", String(event.data || 'Unknown message'));
       }
     };
 
