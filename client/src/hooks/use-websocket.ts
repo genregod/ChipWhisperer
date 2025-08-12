@@ -3,15 +3,19 @@ import { useState, useEffect, useRef, useCallback } from "react";
 interface WebSocketMessage {
   type: string;
   data?: any;
+  error?: string;
+  timestamp?: string;
   [key: string]: any;
 }
+
+type MessageListener = (data: WebSocketMessage) => void;
 
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const messageListenersRef = useRef<Map<string, Set<(data: any) => void>>>(new Map());
+  const reconnectTimeoutRef = useRef<number | null>(null);
+  const messageListenersRef = useRef<Map<string, Set<MessageListener>>>(new Map());
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -31,7 +35,7 @@ export function useWebSocket() {
         
         // Clear any pending reconnection attempts
         if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
+          window.clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
         }
       };
@@ -43,16 +47,41 @@ export function useWebSocket() {
             return;
           }
           
-          const message: WebSocketMessage = JSON.parse(event.data);
+          let message: WebSocketMessage;
+          
+          // Try to parse as JSON first
+          try {
+            message = JSON.parse(event.data);
+            // Validate that the parsed object has a type property
+            if (typeof message !== 'object' || !message.type) {
+              throw new Error('Invalid message format');
+            }
+          } catch (parseError) {
+            // If JSON parsing fails, treat as plain text message
+            message = {
+              type: 'raw_data',
+              data: event.data,
+              timestamp: new Date().toISOString()
+            };
+          }
+          
           setLastMessage(message);
 
           // Call registered listeners for this message type
           const listeners = messageListenersRef.current.get(message.type);
           if (listeners) {
-            listeners.forEach(listener => listener(message));
+            listeners.forEach((listener: MessageListener) => listener(message));
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', event.data, error);
+          console.error('Error processing WebSocket message:', event.data, error);
+          // Still try to deliver as raw data
+          const fallbackMessage: WebSocketMessage = {
+            type: 'error',
+            data: event.data,
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString()
+          };
+          setLastMessage(fallbackMessage);
         }
       };
 
@@ -62,7 +91,7 @@ export function useWebSocket() {
         wsRef.current = null;
         
         // Attempt to reconnect after 3 seconds
-        reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = window.setTimeout(() => {
           connect();
         }, 3000);
       };
@@ -77,7 +106,7 @@ export function useWebSocket() {
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
+      window.clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
 
@@ -101,7 +130,7 @@ export function useWebSocket() {
     }
   }, []);
 
-  const addMessageListener = useCallback((messageType: string, listener: (data: any) => void) => {
+  const addMessageListener = useCallback((messageType: string, listener: MessageListener) => {
     if (!messageListenersRef.current.has(messageType)) {
       messageListenersRef.current.set(messageType, new Set());
     }
@@ -132,7 +161,7 @@ export function useWebSocket() {
   useEffect(() => {
     return () => {
       if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
+        window.clearTimeout(reconnectTimeoutRef.current);
       }
     };
   }, []);

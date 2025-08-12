@@ -7,19 +7,28 @@ export interface DetectedChip {
   pageSize: string;
 }
 
+export interface WebUSBError extends Error {
+  code?: string;
+  originalError?: Error;
+}
+
 export function useWebUSB() {
-  const isSupported = typeof navigator !== 'undefined' && 'usb' in navigator;
+  const isSupported = typeof navigator !== 'undefined' && 'usb' in navigator && !!navigator.usb;
   let device: USBDevice | null = null;
   let isConnected = false;
 
   const connect = async (): Promise<void> => {
     if (!isSupported) {
-      throw new Error('WebUSB API is not supported in this browser');
+      throw new Error('WebUSB API is not supported in this browser. Please use Chrome, Edge, or other Chromium-based browsers.');
+    }
+
+    if (!navigator.usb) {
+      throw new Error('USB interface not available');
     }
 
     try {
       // Request CH341A device (vendor ID: 0x1a86, product ID: 0x5512)
-      device = await (navigator as any).usb.requestDevice({
+      device = await navigator.usb.requestDevice({
         filters: [
           { vendorId: 0x1a86, productId: 0x5512 }, // CH341A
           { vendorId: 0x1a86, productId: 0x5523 }, // CH341A variant
@@ -37,10 +46,10 @@ export function useWebUSB() {
       isConnected = true;
 
     } catch (error) {
-      if (error.name === 'NotFoundError') {
+      if (error instanceof Error && error.name === 'NotFoundError') {
         throw new Error('No CH341A device selected');
       }
-      throw new Error(`Failed to connect to USB device: ${error.message}`);
+      throw new Error(`Failed to connect to USB device: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -120,7 +129,7 @@ export function useWebUSB() {
 
       throw new Error('Failed to read chip ID');
     } catch (error) {
-      throw new Error(`Chip detection failed: ${error.message}`);
+      throw new Error(`Chip detection failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -183,7 +192,7 @@ export function useWebUSB() {
 
       return chunks.join('');
     } catch (error) {
-      throw new Error(`Read operation failed: ${error.message}`);
+      throw new Error(`Read operation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -212,7 +221,7 @@ export function useWebUSB() {
           (writeAddress >> 16) & 0xFF,
           (writeAddress >> 8) & 0xFF,
           writeAddress & 0xFF,
-          ...pageData
+          ...Array.from(pageData)
         ]);
 
         await device.controlTransferOut({
@@ -231,7 +240,7 @@ export function useWebUSB() {
         }
       }
     } catch (error) {
-      throw new Error(`Write operation failed: ${error.message}`);
+      throw new Error(`Write operation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -260,7 +269,7 @@ export function useWebUSB() {
         }
       }
     } catch (error) {
-      throw new Error(`Erase operation failed: ${error.message}`);
+      throw new Error(`Erase operation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 

@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Search, Download, Upload, Eraser, Check, FolderOpen } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Search, Download, Upload, Eraser, Check, FolderOpen, AlertTriangle, Plug, Usb, HelpCircle } from "lucide-react";
 import { useWebUSB } from "@/lib/webusb";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,9 +38,12 @@ export default function SpiFlasher() {
       try {
         await connect();
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         toast({
           title: "Connection Failed",
-          description: "Failed to connect to USB device. Make sure CH341A is connected.",
+          description: errorMessage.includes("No") && errorMessage.includes("selected") 
+            ? "No CH341A device selected. Make sure the device is connected and try again."
+            : "Failed to connect to USB device. Check that your CH341A programmer is properly connected and drivers are installed.",
           variant: "destructive",
         });
         return;
@@ -58,10 +63,11 @@ export default function SpiFlasher() {
         description: `Successfully detected ${chipInfo.name}`,
       });
     } catch (error) {
-      addLogEntry(`Detection failed: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      addLogEntry(`Detection failed: ${errorMessage}`);
       toast({
         title: "Detection Failed",
-        description: "Failed to detect chip. Check connections.",
+        description: "Failed to detect chip. Check that the chip is properly seated in the programmer and connections are secure.",
         variant: "destructive",
       });
     } finally {
@@ -297,6 +303,50 @@ export default function SpiFlasher() {
 
   return (
     <div className="h-full p-6">
+      {/* Connection Status and Guidance */}
+      <div className="mb-6">
+        {!isConnected && (
+          <Alert className="mb-4 border-blue-600 bg-blue-900/20">
+            <Plug className="w-4 h-4" />
+            <AlertDescription className="text-blue-400">
+              <div className="space-y-2">
+                <div className="font-semibold">CH341A Programmer Connection Required</div>
+                <div className="text-sm space-y-1">
+                  <p>• Connect your CH341A programmer to a USB port</p>
+                  <p>• Install CH341SER driver if this is your first time (Windows)</p>
+                  <p>• Click "Detect Chip" below - you'll be prompted to select your device</p>
+                  <p>• Insert the target chip into the programmer socket before detecting</p>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {isConnected && !detectedChip && (
+          <Alert className="mb-4 border-yellow-600 bg-yellow-900/20">
+            <AlertTriangle className="w-4 h-4" />
+            <AlertDescription className="text-yellow-400">
+              <div className="space-y-2">
+                <div className="font-semibold">USB Connected - Ready to Detect Chip</div>
+                <div className="text-sm">
+                  Make sure your target chip (EEPROM/flash memory) is properly inserted into the CH341A programmer socket, then click "Detect Chip".
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {detectedChip && (
+          <Alert className="mb-4 border-green-600 bg-green-900/20">
+            <Check className="w-4 h-4" />
+            <AlertDescription className="text-green-400">
+              <div className="font-semibold">Chip Detected: {detectedChip.name}</div>
+              <div className="text-sm">Ready for read, write, and erase operations.</div>
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-6 h-full">
         {/* Chip Detection & Info */}
         <Card className="bg-hw-darker border-gray-700">

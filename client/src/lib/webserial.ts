@@ -1,6 +1,7 @@
 export interface SerialPort {
   id: string;
   name: string;
+  port?: any; // The actual SerialPort instance
 }
 
 export interface SerialConfiguration {
@@ -22,22 +23,26 @@ export class WebSerialAPI extends EventTarget {
   }
 
   get isSupported(): boolean {
-    return typeof navigator !== 'undefined' && 'serial' in navigator;
+    return typeof navigator !== 'undefined' && 'serial' in navigator && !!navigator.serial;
   }
 
   async getAvailablePorts(): Promise<SerialPort[]> {
-    if (!this.isSupported) {
+    if (!this.isSupported || !navigator.serial) {
       return [];
     }
 
     try {
-      const ports = await (navigator as any).serial.getPorts();
-      return ports.map((port: any, index: number) => ({
-        id: `port_${index}`,
-        name: port.getInfo().usbProductId 
-          ? `USB Device (${port.getInfo().usbVendorId}:${port.getInfo().usbProductId})`
-          : `Serial Port ${index + 1}`,
-      }));
+      const ports = await navigator.serial.getPorts();
+      return ports.map((port: any, index: number) => {
+        const info = port.getInfo();
+        return {
+          id: `port_${index}`,
+          name: info.usbProductId 
+            ? `USB Device (${info.usbVendorId?.toString(16) || '????'}:${info.usbProductId?.toString(16) || '????'})`
+            : `Serial Port ${index + 1}`,
+          port: port
+        };
+      });
     } catch (error) {
       console.error('Failed to get serial ports:', error);
       return [];
@@ -45,13 +50,13 @@ export class WebSerialAPI extends EventTarget {
   }
 
   async connect(portId?: string): Promise<void> {
-    if (!this.isSupported) {
-      throw new Error('WebSerial API is not supported in this browser');
+    if (!this.isSupported || !navigator.serial) {
+      throw new Error('WebSerial API is not supported in this browser. Please use Chrome, Edge, or other Chromium-based browsers.');
     }
 
     try {
       // Request port access
-      this.port = await (navigator as any).serial.requestPort();
+      this.port = await navigator.serial.requestPort();
       
       // Open the port with default settings
       await this.port.open({
@@ -71,17 +76,17 @@ export class WebSerialAPI extends EventTarget {
 
       // Get port info for connection details
       const info = this.port.getInfo();
-      const connectionInfo = `115200 baud, 8N1${info.usbProductId ? ` (USB ${info.usbVendorId}:${info.usbProductId})` : ''}`;
+      const connectionInfo = `115200 baud, 8N1${info.usbProductId ? ` (USB ${info.usbVendorId?.toString(16) || '????'}:${info.usbProductId?.toString(16) || '????'})` : ''}`;
 
       this.dispatchEvent(new CustomEvent('connect', {
         detail: { info: connectionInfo }
       }));
 
     } catch (error) {
-      if (error.name === 'NotFoundError') {
+      if (error instanceof Error && error.name === 'NotFoundError') {
         throw new Error('No device selected');
       }
-      throw new Error(`Failed to connect to serial device: ${error.message}`);
+      throw new Error(`Failed to connect to serial device: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -108,7 +113,7 @@ export class WebSerialAPI extends EventTarget {
       this.dispatchEvent(new CustomEvent('disconnect'));
     } catch (error) {
       console.error('Error during disconnect:', error);
-      throw new Error(`Failed to disconnect: ${error.message}`);
+      throw new Error(`Failed to disconnect: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -122,7 +127,7 @@ export class WebSerialAPI extends EventTarget {
       const dataWithNewline = data.endsWith('\n') ? data : data + '\n';
       await this.writer.write(encoder.encode(dataWithNewline));
     } catch (error) {
-      throw new Error(`Failed to write data: ${error.message}`);
+      throw new Error(`Failed to write data: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -160,7 +165,7 @@ export class WebSerialAPI extends EventTarget {
     } catch (error) {
       if (this.isReading) {
         this.dispatchEvent(new CustomEvent('error', {
-          detail: { error: error.message }
+          detail: { error: error instanceof Error ? error.message : String(error) }
         }));
       }
     }

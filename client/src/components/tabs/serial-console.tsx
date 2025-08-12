@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { HelpCircle, Monitor, AlertTriangle, CheckCircle, Settings } from "lucide-react";
 import { useSerial } from "@/hooks/use-serial";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { cn } from "@/lib/utils";
@@ -25,9 +28,10 @@ export default function SerialConsole() {
   const [parity, setParity] = useState("none");
   const [stopBits, setStopBits] = useState("1");
   const [dataFormat, setDataFormat] = useState("ascii");
+  const [showConnectionHelp, setShowConnectionHelp] = useState(false);
   
   const consoleRef = useRef<HTMLDivElement>(null);
-  const { sendData, isConnected } = useSerial();
+  const { sendData, isConnected, isSupported } = useSerial();
   const { sendMessage } = useWebSocket();
 
   const addMessage = (type: ConsoleMessage["type"], text: string) => {
@@ -129,6 +133,74 @@ export default function SerialConsole() {
   return (
     <div className="h-full flex">
       <div className="flex-1 flex flex-col">
+        {/* Connection Status */}
+        {!isConnected && (
+          <div className="bg-hw-darker border-b border-gray-700 p-3">
+            <Alert className="border-blue-600 bg-blue-900/20">
+              <Monitor className="w-4 h-4" />
+              <AlertDescription className="text-blue-400">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold mb-1">Serial Device Connection Required</div>
+                    <div className="text-sm">Connect ESP32, Arduino, or other serial devices. Use the connection button in the top bar.</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowConnectionHelp(!showConnectionHelp)}
+                    className="text-blue-400 border-blue-400 hover:bg-blue-900/40"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+            
+            {showConnectionHelp && (
+              <div className="mt-3 p-3 bg-hw-code rounded border border-gray-600">
+                <div className="text-sm text-gray-300 space-y-2">
+                  <div className="font-semibold text-white">Connection Steps:</div>
+                  <ol className="space-y-1 text-xs">
+                    <li>1. Connect your serial device (ESP32, Arduino, etc.) to a USB port</li>
+                    <li>2. Install drivers if needed (CP2102 for ESP32, CH340 for some Arduino clones)</li>
+                    <li>3. Click "Connect" in the top bar</li>
+                    <li>4. Select your device from the browser popup</li>
+                    <li>5. Configure baud rate (usually 115200 for ESP32, 9600 for Arduino)</li>
+                  </ol>
+                  <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-600 rounded text-yellow-300">
+                    <div className="text-xs">
+                      <strong>Note:</strong> Devices don't appear automatically in dropdowns. 
+                      Browser security requires explicit permission for each device.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {isConnected && (
+          <div className="bg-hw-darker border-b border-gray-700 p-2">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span className="text-green-400">Connected</span>
+                <Badge className="bg-green-900/30 text-green-400 text-xs">
+                  {baudRate} baud
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowConnectionHelp(!showConnectionHelp)}
+                className="text-gray-400 hover:text-white p-1"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Console Output */}
         <div
           ref={consoleRef}
